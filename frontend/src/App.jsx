@@ -36,7 +36,7 @@ export default function App() {
 
   useEffect(() => {
     refresh()
-    const t = setInterval(refresh, 3000)
+    const t = setInterval(refresh, 6000)
     return () => clearInterval(t)
   }, [refresh])
 
@@ -47,7 +47,7 @@ export default function App() {
       try { const tr = await getTrace(selected); if (live) setTrace(tr) } catch {}
     }
     load()
-    const t = setInterval(load, 2500)
+    const t = setInterval(load, 5000)
     return () => { live = false; clearInterval(t) }
   }, [selected])
 
