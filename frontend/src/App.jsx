@@ -27,29 +27,21 @@ export default function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const [inc, ch] = await Promise.all([listIncidents(), getClusterChecks()])
+      const calls = [listIncidents(), getClusterChecks()]
+      if (selected) calls.push(getTrace(selected))
+      const [inc, ch, tr] = await Promise.all(calls)
       setIncidents(inc)
       setChecks(ch)
+      if (tr) setTrace(tr)
       if (!selected && inc.length > 0) setSelected(inc[0].id)
-    } catch { /* API not up yet */ }
+    } catch { /* API not up yet, or transiently throttled — next poll retries */ }
   }, [selected])
 
   useEffect(() => {
     refresh()
-    const t = setInterval(refresh, 6000)
+    const t = setInterval(refresh, 10000)
     return () => clearInterval(t)
   }, [refresh])
-
-  useEffect(() => {
-    if (!selected) return
-    let live = true
-    const load = async () => {
-      try { const tr = await getTrace(selected); if (live) setTrace(tr) } catch {}
-    }
-    load()
-    const t = setInterval(load, 5000)
-    return () => { live = false; clearInterval(t) }
-  }, [selected])
 
   const fire = async (scenario) => {
     setFiring(true)
