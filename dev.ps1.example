@@ -1,0 +1,14 @@
+# Copy this file to dev.ps1 and fill in your real values.
+# dev.ps1 is gitignored — never commit real secrets.
+
+$env:COCKROACH_CONN = "Host=your-cluster.cockroachlabs.cloud;Port=26257;Database=sentinel;Username=your-user;Password=your-password;SSL Mode=VerifyFull"
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:VOYAGE_API_KEY = "pa-..."
+$env:AWS_ACCESS_KEY_ID = "AKIA..."
+$env:AWS_SECRET_ACCESS_KEY = "..."
+$env:AWS_REGION = "eu-central-1"
+$env:SENTINEL_S3_BUCKET = "your-bucket-name"
+$env:CCLOUD_CLUSTER_ID = "your-cluster-id"
+$Env:PATH += ";$env:appdata/ccloud"
+
+Write-Host "Sentinel env loaded" -ForegroundColor Green
