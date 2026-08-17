@@ -1,0 +1,14 @@
+bin/
+obj/
+node_modules/
+dist/
+.env
+*.user
+appsettings.Development.json
+.vs/
+.idea/
+dev.ps1
+ccloud.zip
+ccloud/
+sentinel.zip
+*.log

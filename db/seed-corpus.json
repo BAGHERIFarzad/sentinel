@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "postmortem",
+    "service": "api-gateway",
+    "title": "2025-11-04 — api-gateway connection pool exhaustion",
+    "content": "Symptom: p99 latency spiked above 4s, then 'connection refused' errors from api-gateway to the orders database. Root cause: a deploy doubled per-request DB round trips; the Npgsql pool (max 100) exhausted under normal traffic. Detection signature: 'pg: connection refused' + healthy database CPU. Mitigation that worked: rolled back deploy v2.14.3, then raised pool max to 250 as a stopgap. Mitigation that did NOT work: restarting the gateway pods (pool refilled and exhausted again within 90 seconds). Prevention: added pool saturation alert at 80%."
+  },
+  {
+    "kind": "postmortem",
+    "service": "checkout",
+    "title": "2025-12-19 — checkout OOM kill loop under promo traffic",
+    "content": "Symptom: checkout pods entering CrashLoopBackOff every 3-4 minutes during a promotion. Root cause: an in-memory cart cache without eviction; promo traffic tripled unique carts and the container hit its 512Mi memory limit. Detection signature: exit code 137 / OOMKilled events. Mitigation that worked: enabled LRU eviction feature flag cart_cache_lru and raised the limit to 1Gi. Mitigation that did NOT work: horizontal scaling — every new pod OOMed on warmup because it bulk-loaded the full cart set."
+  },
+  {
+    "kind": "postmortem",
+    "service": "search",
+    "title": "2026-01-22 — search timeouts after index migration",
+    "content": "Symptom: 30% of search queries timing out at 2s. Root cause: a schema migration dropped a covering index; queries fell back to full scans. Detection signature: timeout errors correlated exactly with migration deploy time, database CPU pegged. Mitigation that worked: recreated the covering index CONCURRENTLY. Mitigation that did NOT work: raising the query timeout to 5s — it only delayed the failures and increased load."
+  },
+  {
+    "kind": "runbook",
+    "service": "any",
+    "title": "Runbook — database connection errors",
+    "content": "When a service reports connection refused or pool timeout errors to its database: 1) Check whether the database itself is healthy (CPU, connections, uptime) before touching the service. 2) If the DB is healthy, the problem is almost always client-side pool exhaustion or a network policy change. 3) Correlate with the last deploy time of the calling service. 4) Prefer rollback of the most recent deploy over restarts — restarts mask pool leaks temporarily. 5) After mitigation, snapshot state and write a postmortem."
+  },
+  {
+    "kind": "runbook",
+    "service": "any",
+    "title": "Runbook — memory pressure / OOM kills",
+    "content": "When pods are OOMKilled: 1) Confirm exit code 137 in events. 2) Check whether memory growth is traffic-proportional (cache growth) or a leak (monotonic under flat traffic). 3) For cache growth, enable eviction before raising limits. 4) Do NOT scale horizontally as a first response if warmup loads a shared dataset — new replicas will OOM in a loop. 5) Raise limits only as a stopgap with a follow-up ticket."
+  },
+  {
+    "kind": "runbook",
+    "service": "any",
+    "title": "Runbook — latency regression after deploy",
+    "content": "When p99 latency regresses within 30 minutes of a deploy: 1) Treat the deploy as the prime suspect. 2) Diff the deploy for query changes, added round trips, or removed indexes. 3) Roll back first, investigate second, if the regression breaches SLO. 4) If rollback is impossible (migration applied), mitigate at the database layer: recreate indexes, add caching, or shed load."
+  }
+]
